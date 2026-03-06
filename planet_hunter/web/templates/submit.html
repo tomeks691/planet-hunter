@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Submit - Planet Hunter{% endblock %}
+{% block content %}
+<h1>Submit TIC ID</h1>
+<div class="card" style="max-width: 500px;">
+    <form action="/submit" method="post">
+        <label for="tic_id">TIC ID</label>
+        <input type="number" id="tic_id" name="tic_id" placeholder="e.g. 307210830" required>
+        <p class="hint">Enter a TESS Input Catalog identifier. The pipeline will fetch data from MAST, run BLS transit search, and classify the result.</p>
+        <button type="submit">Add to Queue</button>
+    </form>
+</div>
+
+<div class="card" style="max-width: 500px; margin-top: 1rem;">
+    <h3>Test targets</h3>
+    <table>
+        <tr>
+            <td><strong>TIC 48356677</strong></td>
+            <td>Known eclipsing binary (~22% depth)</td>
+        </tr>
+        <tr>
+            <td><strong>TIC 307210830</strong></td>
+            <td>TOI-700 - confirmed planet host</td>
+        </tr>
+    </table>
+</div>
+{% endblock %}

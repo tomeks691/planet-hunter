@@ -1,0 +1,12 @@
+services:
+  planet-hunter:
+    build: .
+    container_name: planet-hunter
+    restart: unless-stopped
+    ports:
+      - "8420:8420"
+    volumes:
+      - ph-data:/app/data
+
+volumes:
+  ph-data:

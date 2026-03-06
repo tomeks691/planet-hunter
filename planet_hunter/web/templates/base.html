@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Planet Hunter{% endblock %}</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <nav>
+        <div class="nav-brand">Planet Hunter</div>
+        <div class="nav-links">
+            <a href="/">Dashboard</a>
+            <a href="/submit">Submit</a>
+            <a href="/results">Results</a>
+            <a href="/queue">Queue</a>
+            <a href="/review">Review</a>
+        </div>
+    </nav>
+    <main id="main-content">
+        {% block content %}{% endblock %}
+    </main>
+    <script>
+    (function() {
+        const INTERVAL = 10000;
+        const path = location.pathname;
+        // Only auto-refresh these pages
+        if (['/', '/queue', '/results', '/review'].indexOf(path) === -1 &&
+            !path.startsWith('/results?')) return;
+
+        setInterval(async () => {
+            try {
+                const resp = await fetch(path, {headers: {'Accept': 'text/html'}});
+                if (!resp.ok) return;
+                const html = await resp.text();
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const fresh = doc.getElementById('main-content');
+                if (fresh) {
+                    document.getElementById('main-content').innerHTML = fresh.innerHTML;
+                }
+            } catch(e) {}
+        }, INTERVAL);
+    })();
+    </script>
+</body>
+</html>

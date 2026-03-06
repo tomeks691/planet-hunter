@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - Planet Hunter{% endblock %}
+{% block content %}
+<h1>Dashboard</h1>
+
+<div class="grid">
+    <div class="card">
+        <h3>Classifications</h3>
+        <table>
+            {% for cls, cnt in stats.items() %}
+            <tr>
+                <td><span class="badge badge-{{ cls | lower }}">{{ cls }}</span></td>
+                <td>{{ cnt }}</td>
+            </tr>
+            {% endfor %}
+            {% if not stats %}
+            <tr><td colspan="2">No analyses yet</td></tr>
+            {% endif %}
+        </table>
+    </div>
+
+    <div class="card">
+        <h3>Queue</h3>
+        <table>
+            <tr><td>Queued</td><td>{{ queue.queued or 0 }}</td></tr>
+            <tr><td>Running</td><td>{{ queue.running or 0 }}</td></tr>
+            <tr><td>Done</td><td>{{ queue.done or 0 }}</td></tr>
+            <tr><td>Failed</td><td>{{ queue.failed or 0 }}</td></tr>
+        </table>
+    </div>
+
+    <div class="card">
+        <h3>Quick Submit</h3>
+        <form action="/submit" method="post">
+            <input type="number" name="tic_id" placeholder="TIC ID" required>
+            <button type="submit">Analyze</button>
+        </form>
+    </div>
+</div>
+
+<h2>Recent Analyses</h2>
+<table class="data-table">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>TIC ID</th>
+            <th>Classification</th>
+            <th>Period (d)</th>
+            <th>Depth</th>
+            <th>SNR</th>
+            <th>Date</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for a in recent %}
+        <tr>
+            <td><a href="/results/{{ a.id }}">{{ a.id }}</a></td>
+            <td>{{ a.tic_id }}</td>
+            <td><span class="badge badge-{{ a.classification | lower }}">{{ a.classification }}</span></td>
+            <td>{{ "%.4f" | format(a.period) if a.period else "-" }}</td>
+            <td>{{ "%.5f" | format(a.depth) if a.depth else "-" }}</td>
+            <td>{{ "%.1f" | format(a.snr) if a.snr else "-" }}</td>
+            <td>{{ a.created_at }}</td>
+        </tr>
+        {% endfor %}
+        {% if not recent %}
+        <tr><td colspan="7">No analyses yet. <a href="/submit">Submit a TIC ID</a>.</td></tr>
+        {% endif %}
+    </tbody>
+</table>
+
+<div class="scanner-toggle">
+    <span class="badge badge-running">Auto-Scanner: active</span>
+    <span class="hint">Scanning every 5 min</span>
+</div>
+{% endblock %}

@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Queue - Planet Hunter{% endblock %}
+{% block content %}
+<h1>Processing Queue</h1>
+
+<div class="grid">
+    <div class="card">
+        <h3>Status</h3>
+        <table>
+            <tr><td>Queued</td><td>{{ stats.queued or 0 }}</td></tr>
+            <tr><td>Running</td><td>{{ stats.running or 0 }}</td></tr>
+            <tr><td>Done</td><td>{{ stats.done or 0 }}</td></tr>
+            <tr><td>Failed</td><td>{{ stats.failed or 0 }}</td></tr>
+        </table>
+    </div>
+    <div class="card">
+        <h3>Add to Queue</h3>
+        <form action="/submit" method="post">
+            <input type="number" name="tic_id" placeholder="TIC ID" required>
+            <button type="submit">Submit</button>
+        </form>
+    </div>
+</div>
+
+<table class="data-table">
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>TIC ID</th>
+            <th>Source</th>
+            <th>Priority</th>
+            <th>Status</th>
+            <th>Submitted</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in items %}
+        <tr>
+            <td>{{ item.id }}</td>
+            <td>{{ item.tic_id }}</td>
+            <td>{{ item.source }}</td>
+            <td>{{ item.priority }}</td>
+            <td><span class="badge badge-{{ item.status | lower }}">{{ item.status }}</span></td>
+            <td>{{ item.created_at }}</td>
+        </tr>
+        {% endfor %}
+        {% if not items %}
+        <tr><td colspan="6">Queue is empty.</td></tr>
+        {% endif %}
+    </tbody>
+</table>
+{% endblock %}

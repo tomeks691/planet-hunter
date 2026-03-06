@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Review - Planet Hunter{% endblock %}
+{% block content %}
+<h1>Manual Review</h1>
+<p>These objects need human classification. Click an ID to view details and submit a review.</p>
+
+<table class="data-table">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>TIC ID</th>
+            <th>Period (d)</th>
+            <th>Depth</th>
+            <th>SNR</th>
+            <th>Sectors</th>
+            <th>Date</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for a in analyses %}
+        <tr>
+            <td>{{ a.id }}</td>
+            <td>{{ a.tic_id }}</td>
+            <td>{{ "%.4f" | format(a.period) if a.period else "-" }}</td>
+            <td>{{ "%.5f" | format(a.depth) if a.depth else "-" }}</td>
+            <td>{{ "%.1f" | format(a.snr) if a.snr else "-" }}</td>
+            <td>{{ a.sectors_detected }}/{{ a.sectors_checked }}</td>
+            <td>{{ a.created_at }}</td>
+            <td><a href="/results/{{ a.id }}" class="btn">Review</a></td>
+        </tr>
+        {% endfor %}
+        {% if not analyses %}
+        <tr><td colspan="8">No objects pending review.</td></tr>
+        {% endif %}
+    </tbody>
+</table>
+{% endblock %}

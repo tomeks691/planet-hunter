@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}TIC {{ a.tic_id }} - Planet Hunter{% endblock %}
+{% block content %}
+<h1>TIC {{ a.tic_id }}
+    <span class="badge badge-{{ a.classification | lower }}">{{ a.classification }}</span>
+</h1>
+
+{% if a.error_message %}
+<div class="card error">
+    <strong>Error:</strong> {{ a.error_message }}
+</div>
+{% endif %}
+
+<div class="grid">
+    <div class="card">
+        <h3>Signal Properties</h3>
+        <table>
+            <tr><td>Period</td><td>{{ "%.6f days" | format(a.period) if a.period else "-" }}</td></tr>
+            <tr><td>Depth</td><td>{% if a.depth %}{{ "%.6f" | format(a.depth) }} ({{ "%.3f%%" | format(a.depth * 100) }}){% else %}-{% endif %}</td></tr>
+            <tr><td>Duration</td><td>{{ "%.2f hours" | format(a.duration) if a.duration else "-" }}</td></tr>
+            <tr><td>SNR</td><td>{{ "%.1f" | format(a.snr) if a.snr else "-" }}</td></tr>
+        </table>
+    </div>
+
+    <div class="card">
+        <h3>Diagnostics</h3>
+        <table>
+            <tr><td>Sinusoid better?</td><td>{{ "Yes" if a.sinusoid_better else "No" }}</td></tr>
+            <tr><td>Secondary/Primary</td><td>{{ "%.3f" | format(a.secondary_depth) if a.secondary_depth else "-" }}</td></tr>
+            <tr><td>Odd-Even sigma</td><td>{{ "%.1f" | format(a.odd_even_sigma) if a.odd_even_sigma else "-" }}</td></tr>
+            <tr><td>Sectors</td><td>{{ a.sectors_detected }}/{{ a.sectors_checked }} detected</td></tr>
+        </table>
+    </div>
+
+    <div class="card">
+        <h3>Planet Properties</h3>
+        <table>
+            <tr><td>Planet Radius</td><td>{{ "%.2f R_Earth" | format(a.planet_radius) if a.planet_radius else "-" }}</td></tr>
+            <tr><td>Equilibrium Temp</td><td>{{ "%.0f K" | format(a.equilibrium_temp) if a.equilibrium_temp else "-" }}</td></tr>
+        </table>
+    </div>
+
+    {% if star %}
+    <div class="card">
+        <h3>Stellar Properties</h3>
+        <table>
+            <tr><td>RA / Dec</td><td>{{ "%.5f" | format(star.ra) if star.ra else "-" }} / {{ "%.5f" | format(star.dec) if star.dec else "-" }}</td></tr>
+            <tr><td>TESS Mag</td><td>{{ "%.2f" | format(star.tmag) if star.tmag else "-" }}</td></tr>
+            <tr><td>Radius</td><td>{{ "%.3f R_Sun" | format(star.radius) if star.radius else "-" }}</td></tr>
+            <tr><td>Teff</td><td>{{ "%.0f K" | format(star.teff) if star.teff else "-" }}</td></tr>
+        </table>
+    </div>
+    {% endif %}
+</div>
+
+<h2>Plots</h2>
+<div class="plots">
+    {% if a.plot_lightcurve %}
+    <div class="plot-card">
+        <img src="/plots/{{ a.plot_lightcurve }}" alt="Light Curve" onclick="openLightbox(this)">
+    </div>
+    {% endif %}
+    {% if a.plot_periodogram %}
+    <div class="plot-card">
+        <img src="/plots/{{ a.plot_periodogram }}" alt="Periodogram" onclick="openLightbox(this)">
+    </div>
+    {% endif %}
+    {% if a.plot_phase_fold %}
+    <div class="plot-card">
+        <img src="/plots/{{ a.plot_phase_fold }}" alt="Phase Fold" onclick="openLightbox(this)">
+    </div>
+    {% endif %}
+    {% if a.plot_diagnostic %}
+    <div class="plot-card">
+        <img src="/plots/{{ a.plot_diagnostic }}" alt="Diagnostics" onclick="openLightbox(this)">
+    </div>
+    {% endif %}
+</div>
+
+<div id="lightbox" onclick="this.style.display='none'">
+    <img id="lightbox-img" src="" alt="">
+</div>
+
+<script>
+function openLightbox(img) {
+    document.getElementById('lightbox-img').src = img.src;
+    document.getElementById('lightbox').style.display = 'flex';
+}
+</script>
+
+{% if a.review_notes %}
+<div class="card">
+    <h3>Review Notes</h3>
+    <p>{{ a.review_notes }}</p>
+</div>
+{% endif %}
+
+<div class="card">
+    <h3>Change Classification</h3>
+    <form action="/review/{{ a.id }}" method="post">
+        <label>Classification</label>
+        <select name="classification">
+            <option value="PLANET_CANDIDATE" {{ "selected" if a.classification == "PLANET_CANDIDATE" }}>PLANET_CANDIDATE</option>
+            <option value="KNOWN_PLANET" {{ "selected" if a.classification == "KNOWN_PLANET" }}>KNOWN_PLANET</option>
+            <option value="ECLIPSING_BINARY" {{ "selected" if a.classification == "ECLIPSING_BINARY" }}>ECLIPSING_BINARY</option>
+            <option value="VARIABLE_STAR" {{ "selected" if a.classification == "VARIABLE_STAR" }}>VARIABLE_STAR</option>
+            <option value="FALSE_POSITIVE" {{ "selected" if a.classification == "FALSE_POSITIVE" }}>FALSE_POSITIVE</option>
+            <option value="NOISE" {{ "selected" if a.classification == "NOISE" }}>NOISE</option>
+            <option value="MANUAL_REVIEW" {{ "selected" if a.classification == "MANUAL_REVIEW" }}>MANUAL_REVIEW</option>
+        </select>
+        <label>Notes</label>
+        <textarea name="notes" rows="3" placeholder="Review notes...">{{ a.review_notes or "" }}</textarea>
+        <button type="submit">Save</button>
+    </form>
+</div>
+{% endblock %}
