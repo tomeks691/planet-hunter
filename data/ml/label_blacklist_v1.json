@@ -1,0 +1,11 @@
+{
+  "version": "v1",
+  "reason": "Known suspicious KNOWN_PLANET training rows flagged by audit",
+  "tic_ids": [
+    38846515,
+    63130782,
+    432549364,
+    123417316,
+    139036617
+  ]
+}

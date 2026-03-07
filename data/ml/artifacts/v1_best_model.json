@@ -1,0 +1,9 @@
+{
+  "version": "v1.0-best",
+  "strategy": "two_stage_high_recall_with_blacklist_v1",
+  "stage_a_model": "two_stage_hr_stage_a.joblib",
+  "stage_b_model": "two_stage_hr_stage_b.joblib",
+  "metrics_file": "two_stage_high_recall_metrics.json",
+  "training_blacklist": "../label_blacklist_v1.json",
+  "notes": "Best current model after removing 5 suspicious KNOWN_PLANET TICs from training set."
+}
