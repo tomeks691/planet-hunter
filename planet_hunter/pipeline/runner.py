@@ -212,12 +212,26 @@ class PipelineRunner:
 
             tic_id = item["tic_id"]
             queue_id = item["id"]
+            source = item.get("source")
             log.info("Processing TIC %d (queue #%d)", tic_id, queue_id)
 
             try:
                 result = run_pipeline(tic_id)
-                if db.is_known_planet(tic_id):
+
+                # Mark as KNOWN_PLANET only when we actually detected a periodic signal.
+                if db.is_known_planet(tic_id) and result.period is not None:
                     result.classification = Classification.KNOWN_PLANET
+
+                # For ML training queue: skip persisting rows without period.
+                # This keeps training data clean (usable examples only).
+                if source == QueueSource.ML_TRAINING.value and result.period is None:
+                    db.finish_queue_item(queue_id, failed=False)
+                    log.info(
+                        "TIC %d skipped (ML_TRAINING, no period detected)",
+                        tic_id,
+                    )
+                    continue
+
                 analysis_id = db.insert_analysis(result)
                 db.finish_queue_item(queue_id, failed=False)
                 log.info(
