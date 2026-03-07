@@ -25,6 +25,9 @@ def classify(result: AnalysisResult) -> Classification:
 
     Modifies result in-place with the classification and returns it.
     """
+    if not result.ml_decision_source:
+        result.ml_decision_source = "rules"
+
     log.info(
         "Classifying TIC %d: SNR=%.1f, depth=%.5f, sinusoid=%s, "
         "secondary=%.3f, odd_even=%.1fσ, sectors=%d/%d",

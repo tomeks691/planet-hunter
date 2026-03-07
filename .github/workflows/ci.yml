@@ -41,3 +41,7 @@ jobs:
       - name: build_training_db blacklist check
         run: |
           python scripts/ci_check_build_training_blacklist.py
+
+      - name: ML DB migration/filter/snapshot check
+        run: |
+          python scripts/ci_check_ml_db_features.py
