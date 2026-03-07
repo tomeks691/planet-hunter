@@ -27,6 +27,15 @@ SCANNER_INTERVAL = 300  # seconds between auto-scans
 SCANNER_BATCH_SIZE = 5
 # If True, AUTO scanner will pause while ML training backlog exists (queued/running)
 PAUSE_AUTO_SCANNER_WHEN_ML_BACKLOG = True
+# Ignore ML RUNNING items older than this age when deciding backlog pause.
+ML_BACKLOG_RUNNING_MAX_AGE_MINUTES = 45
+
+# Queue recovery / stale RUNNING safeguards
+# Aggressive recovery for ML queue to avoid AUTO scanner lock-ups.
+STUCK_RUNNING_ML_MINUTES = 45
+# Conservative recovery for non-ML queue items.
+STUCK_RUNNING_OTHER_MINUTES = 360
+STUCK_SWEEP_INTERVAL_SECONDS = 300
 
 # Web
 HOST = "0.0.0.0"
