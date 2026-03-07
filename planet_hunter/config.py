@@ -25,6 +25,8 @@ PRIORITY_AUTO = 5
 # Scanner
 SCANNER_INTERVAL = 300  # seconds between auto-scans
 SCANNER_BATCH_SIZE = 5
+# If True, AUTO scanner will pause while ML training backlog exists (queued/running)
+PAUSE_AUTO_SCANNER_WHEN_ML_BACKLOG = True
 
 # Web
 HOST = "0.0.0.0"

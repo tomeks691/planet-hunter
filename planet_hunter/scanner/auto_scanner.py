@@ -3,7 +3,12 @@ import threading
 import time
 from planet_hunter import db
 from planet_hunter.models import QueueSource
-from planet_hunter.config import SCANNER_INTERVAL, SCANNER_BATCH_SIZE, PRIORITY_AUTO
+from planet_hunter.config import (
+    SCANNER_INTERVAL,
+    SCANNER_BATCH_SIZE,
+    PRIORITY_AUTO,
+    PAUSE_AUTO_SCANNER_WHEN_ML_BACKLOG,
+)
 from planet_hunter.scanner.tic_catalog import find_fresh_targets
 
 log = logging.getLogger(__name__)
@@ -45,7 +50,19 @@ class AutoScanner:
     def _loop(self):
         while not self._stop_event.is_set():
             try:
-                tic_ids = find_fresh_targets(SCANNER_BATCH_SIZE)
+                if PAUSE_AUTO_SCANNER_WHEN_ML_BACKLOG:
+                    ml_active = db.count_active_by_source(QueueSource.ML_TRAINING)
+                    if ml_active > 0:
+                        log.info(
+                            "Auto-scanner paused (ML_TRAINING backlog active: %d)",
+                            ml_active,
+                        )
+                        tic_ids = []
+                    else:
+                        tic_ids = find_fresh_targets(SCANNER_BATCH_SIZE)
+                else:
+                    tic_ids = find_fresh_targets(SCANNER_BATCH_SIZE)
+
                 for tic_id in tic_ids:
                     db.enqueue(tic_id, QueueSource.AUTO, PRIORITY_AUTO)
                     log.info("Auto-scanner queued TIC %d", tic_id)

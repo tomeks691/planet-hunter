@@ -293,3 +293,39 @@ def queue_stats() -> dict:
     """).fetchone()
     conn.close()
     return dict(row)
+
+
+def count_active_by_source(source: QueueSource) -> int:
+    """Count queue items for a source that are QUEUED or RUNNING."""
+    conn = get_conn()
+    row = conn.execute(
+        """
+        SELECT COUNT(*)
+        FROM queue
+        WHERE source=? AND status IN ('QUEUED', 'RUNNING')
+        """,
+        (source.value,),
+    ).fetchone()
+    conn.close()
+    return int(row[0] or 0)
+
+
+def requeue_stuck_running(hours: int = 6) -> int:
+    """Reset stale RUNNING queue items back to QUEUED.
+
+    Uses created_at as a conservative proxy for running age.
+    """
+    conn = get_conn()
+    cur = conn.execute(
+        """
+        UPDATE queue
+        SET status='QUEUED'
+        WHERE status='RUNNING'
+          AND datetime(created_at) < datetime('now', ?)
+        """,
+        (f"-{int(hours)} hours",),
+    )
+    changed = cur.rowcount if cur.rowcount is not None else 0
+    conn.commit()
+    conn.close()
+    return changed

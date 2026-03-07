@@ -17,6 +17,10 @@ from planet_hunter.pipeline.properties import compute_properties
 from planet_hunter.pipeline.plots import generate_all_plots
 from planet_hunter.config import SNR_MINIMUM
 
+# Requeue RUNNING items that look stale (worker crash/restart leftovers)
+STUCK_RUNNING_HOURS = 6
+STUCK_SWEEP_INTERVAL_SECONDS = 300
+
 log = logging.getLogger(__name__)
 
 
@@ -188,7 +192,19 @@ class PipelineRunner:
         return self._thread is not None and self._thread.is_alive()
 
     def _loop(self):
+        last_stuck_sweep = 0.0
+
         while not self._stop_event.is_set():
+            now = time.time()
+            if now - last_stuck_sweep >= STUCK_SWEEP_INTERVAL_SECONDS:
+                fixed = db.requeue_stuck_running(hours=STUCK_RUNNING_HOURS)
+                if fixed > 0:
+                    log.warning(
+                        "Recovered %d stale RUNNING queue item(s) -> QUEUED",
+                        fixed,
+                    )
+                last_stuck_sweep = now
+
             item = db.next_in_queue()
             if item is None:
                 time.sleep(2)
