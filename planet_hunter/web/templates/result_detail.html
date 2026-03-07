@@ -29,6 +29,9 @@
             <tr><td>Secondary/Primary</td><td>{{ "%.3f" | format(a.secondary_depth) if a.secondary_depth else "-" }}</td></tr>
             <tr><td>Odd-Even sigma</td><td>{{ "%.1f" | format(a.odd_even_sigma) if a.odd_even_sigma else "-" }}</td></tr>
             <tr><td>Sectors</td><td>{{ a.sectors_detected }}/{{ a.sectors_checked }} detected</td></tr>
+            <tr><td>ML Planet Score</td><td>{{ "%.4f" | format(a.ml_planet_score) if a.ml_planet_score is not none else "-" }}</td></tr>
+            <tr><td>ML Model Version</td><td>{{ a.ml_model_version or "-" }}</td></tr>
+            <tr><td>Decision Source</td><td>{{ a.ml_decision_source or "-" }}</td></tr>
         </table>
     </div>
 

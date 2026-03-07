@@ -36,6 +36,27 @@
             <button type="submit">Analyze</button>
         </form>
     </div>
+
+    <div class="card">
+        <h3>ML monitor (last {{ ml_snapshot.hours }}h)</h3>
+        <table>
+            <tr><td>Total analyses</td><td>{{ ml_snapshot.total }}</td></tr>
+            <tr><td>ML-scored</td><td>{{ ml_snapshot.ml_scored }}</td></tr>
+            <tr><td>Planet candidates</td><td>{{ ml_snapshot.planet_candidate }}</td></tr>
+            <tr><td>Manual review</td><td>{{ ml_snapshot.manual_review }}</td></tr>
+            <tr><td>High-conf planets (>=0.80)</td><td>{{ ml_snapshot.high_conf_planet }}</td></tr>
+            <tr><td>Avg ML score</td><td>{{ "%.3f" | format(ml_snapshot.avg_score) if ml_snapshot.avg_score is not none else "-" }}</td></tr>
+        </table>
+        <div class="hint" style="margin-top:8px;">
+            {% if ml_snapshot.versions %}
+                {% for v in ml_snapshot.versions %}
+                    <span class="badge">{{ v.model_version }}: {{ v.count }}</span>
+                {% endfor %}
+            {% else %}
+                No model versions yet
+            {% endif %}
+        </div>
+    </div>
 </div>
 
 <h2>Recent Analyses</h2>

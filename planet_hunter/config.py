@@ -40,6 +40,7 @@ STUCK_SWEEP_INTERVAL_SECONDS = 300
 # ML inference (optional runtime classifier)
 ML_CLASSIFIER_ENABLED = True
 ML_CLASSIFIER_UNCERTAINTY_MARGIN = 0.03
+ML_MODEL_VERSION = "v1.0-best"
 ML_STAGE_A_PATH = DATA_DIR / "ml/artifacts/two_stage_hr_stage_a.joblib"
 ML_STAGE_B_PATH = DATA_DIR / "ml/artifacts/two_stage_hr_stage_b.joblib"
 ML_METRICS_PATH = DATA_DIR / "ml/artifacts/two_stage_high_recall_metrics.json"

@@ -60,6 +60,9 @@ class AnalysisResult:
     plot_diagnostic: Optional[str] = None
     review_notes: Optional[str] = None
     error_message: Optional[str] = None
+    ml_planet_score: Optional[float] = None
+    ml_model_version: Optional[str] = None
+    ml_decision_source: Optional[str] = None
 
 
 @dataclass
