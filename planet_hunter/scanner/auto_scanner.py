@@ -8,6 +8,7 @@ from planet_hunter.config import (
     SCANNER_BATCH_SIZE,
     PRIORITY_AUTO,
     PAUSE_AUTO_SCANNER_WHEN_ML_BACKLOG,
+    ML_BACKLOG_RUNNING_MAX_AGE_MINUTES,
 )
 from planet_hunter.scanner.tic_catalog import find_fresh_targets
 
@@ -51,7 +52,10 @@ class AutoScanner:
         while not self._stop_event.is_set():
             try:
                 if PAUSE_AUTO_SCANNER_WHEN_ML_BACKLOG:
-                    ml_active = db.count_active_by_source(QueueSource.ML_TRAINING)
+                    ml_active = db.count_active_by_source(
+                        QueueSource.ML_TRAINING,
+                        running_max_age_minutes=ML_BACKLOG_RUNNING_MAX_AGE_MINUTES,
+                    )
                     if ml_active > 0:
                         log.info(
                             "Auto-scanner paused (ML_TRAINING backlog active: %d)",
