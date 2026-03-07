@@ -37,6 +37,13 @@ STUCK_RUNNING_ML_MINUTES = 45
 STUCK_RUNNING_OTHER_MINUTES = 360
 STUCK_SWEEP_INTERVAL_SECONDS = 300
 
+# ML inference (optional runtime classifier)
+ML_CLASSIFIER_ENABLED = True
+ML_CLASSIFIER_UNCERTAINTY_MARGIN = 0.03
+ML_STAGE_A_PATH = DATA_DIR / "ml/artifacts/two_stage_hr_stage_a.joblib"
+ML_STAGE_B_PATH = DATA_DIR / "ml/artifacts/two_stage_hr_stage_b.joblib"
+ML_METRICS_PATH = DATA_DIR / "ml/artifacts/two_stage_high_recall_metrics.json"
+
 # Web
 HOST = "0.0.0.0"
 PORT = 8420
