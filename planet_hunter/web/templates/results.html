@@ -4,10 +4,18 @@
 <h1>Analysis Results</h1>
 
 <div class="filters">
-    <a href="/results" class="badge {% if not current_filter %}active{% endif %}">All</a>
+    <a href="/results" class="badge {% if not current_filter and current_min_ml_score is none and not current_model_version %}active{% endif %}">All</a>
+    <a href="/results?classification=MANUAL_REVIEW"
+       class="badge badge-manual_review {% if current_filter == 'MANUAL_REVIEW' %}active{% endif %}">
+        MANUAL_REVIEW
+    </a>
+    <a href="/results?classification=PLANET_CANDIDATE&min_ml_score=0.80"
+       class="badge badge-planet_candidate {% if current_filter == 'PLANET_CANDIDATE' and current_min_ml_score == 0.8 %}active{% endif %}">
+        High confidence planets (>=0.80)
+    </a>
     {% for cls in classifications %}
     <a href="/results?classification={{ cls.value }}"
-       class="badge badge-{{ cls.value | lower }} {% if current_filter == cls.value %}active{% endif %}">
+       class="badge badge-{{ cls.value | lower }} {% if current_filter == cls.value and current_min_ml_score is none %}active{% endif %}">
         {{ cls.value }}
     </a>
     {% endfor %}
@@ -24,6 +32,8 @@
             <th>SNR</th>
             <th>Planet R</th>
             <th>Sectors</th>
+            <th>ML score</th>
+            <th>Model</th>
             <th>Date</th>
         </tr>
     </thead>
@@ -38,11 +48,13 @@
             <td>{{ "%.1f" | format(a.snr) if a.snr else "-" }}</td>
             <td>{{ "%.2f Re" | format(a.planet_radius) if a.planet_radius else "-" }}</td>
             <td>{{ a.sectors_detected }}/{{ a.sectors_checked }}</td>
+            <td>{{ "%.3f" | format(a.ml_planet_score) if a.ml_planet_score is not none else "-" }}</td>
+            <td>{{ a.ml_model_version or "-" }}</td>
             <td>{{ a.created_at }}</td>
         </tr>
         {% endfor %}
         {% if not analyses %}
-        <tr><td colspan="9">No results found.</td></tr>
+        <tr><td colspan="11">No results found.</td></tr>
         {% endif %}
     </tbody>
 </table>

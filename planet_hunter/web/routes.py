@@ -16,11 +16,13 @@ async def index(request: Request):
     stats = db.count_by_classification()
     queue = db.queue_stats()
     recent = db.list_analyses(limit=10)
+    ml_snapshot = db.ml_monitor_snapshot(hours=24)
     return templates.TemplateResponse("index.html", {
         "request": request,
         "stats": stats,
         "queue": queue,
         "recent": recent,
+        "ml_snapshot": ml_snapshot,
     })
 
 
@@ -36,13 +38,25 @@ async def submit_tic(request: Request, tic_id: int = Form(...)):
 
 
 @router.get("/results", response_class=HTMLResponse)
-async def results_list(request: Request, classification: str = None):
-    analyses = db.list_analyses(classification=classification, limit=100)
+async def results_list(
+    request: Request,
+    classification: str = None,
+    min_ml_score: float | None = None,
+    model_version: str | None = None,
+):
+    analyses = db.list_analyses(
+        classification=classification,
+        limit=100,
+        min_ml_score=min_ml_score,
+        model_version=model_version,
+    )
     classifications = list(Classification)
     return templates.TemplateResponse("results.html", {
         "request": request,
         "analyses": analyses,
         "current_filter": classification,
+        "current_min_ml_score": min_ml_score,
+        "current_model_version": model_version,
         "classifications": classifications,
     })
 
@@ -103,6 +117,7 @@ async def api_dashboard():
         "stats": db.count_by_classification(),
         "queue": db.queue_stats(),
         "recent": db.list_analyses(limit=10),
+        "ml_snapshot": db.ml_monitor_snapshot(hours=24),
     }
 
 
@@ -115,7 +130,16 @@ async def api_queue():
 
 
 @router.get("/api/results")
-async def api_results(classification: str = None):
+async def api_results(
+    classification: str = None,
+    min_ml_score: float | None = None,
+    model_version: str | None = None,
+):
     return {
-        "analyses": db.list_analyses(classification=classification, limit=100),
+        "analyses": db.list_analyses(
+            classification=classification,
+            limit=100,
+            min_ml_score=min_ml_score,
+            model_version=model_version,
+        ),
     }

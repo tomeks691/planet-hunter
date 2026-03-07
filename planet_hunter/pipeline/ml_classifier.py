@@ -7,6 +7,7 @@ import joblib
 import numpy as np
 
 from planet_hunter.models import AnalysisResult, Classification
+from planet_hunter.config import ML_MODEL_VERSION
 
 log = logging.getLogger(__name__)
 
@@ -106,6 +107,9 @@ class TwoStageMLClassifier:
             self._load()
             X = self._build_features(result)
             p_planet = float(self._stage_a.predict_proba(X)[0, 1])
+            result.ml_planet_score = p_planet
+            result.ml_model_version = ML_MODEL_VERSION
+            result.ml_decision_source = "two_stage"
 
             # Uncertainty band around decision threshold -> manual review
             if abs(p_planet - self._threshold) <= self.uncertainty_margin:
@@ -124,4 +128,5 @@ class TwoStageMLClassifier:
             return Classification.MANUAL_REVIEW
         except Exception as e:
             log.warning("ML prediction failed, fallback to rules: %s", e)
+            result.ml_decision_source = "fallback_rules"
             return None

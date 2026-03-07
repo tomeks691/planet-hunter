@@ -64,6 +64,9 @@ def init_db():
             plot_diagnostic   TEXT,
             review_notes      TEXT,
             error_message     TEXT,
+            ml_planet_score   REAL,
+            ml_model_version  TEXT,
+            ml_decision_source TEXT,
             created_at        TEXT DEFAULT (datetime('now')),
             FOREIGN KEY (tic_id) REFERENCES stars(tic_id)
         );
@@ -90,6 +93,22 @@ def init_db():
             source  TEXT DEFAULT 'NASA'
         );
     """)
+
+    # Lightweight migrations for existing DBs
+    for sql in [
+        "ALTER TABLE analyses ADD COLUMN ml_planet_score REAL",
+        "ALTER TABLE analyses ADD COLUMN ml_model_version TEXT",
+        "ALTER TABLE analyses ADD COLUMN ml_decision_source TEXT",
+    ]:
+        try:
+            conn.execute(sql)
+        except sqlite3.OperationalError:
+            pass
+
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_analyses_ml_score ON analyses(ml_planet_score)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_analyses_model_version ON analyses(ml_model_version)")
+
+    conn.commit()
     conn.close()
 
 
@@ -130,8 +149,9 @@ def insert_analysis(result: AnalysisResult) -> int:
             planet_radius, equilibrium_temp, sectors_checked, sectors_detected,
             sinusoid_better, secondary_depth, odd_even_sigma,
             plot_lightcurve, plot_periodogram, plot_phase_fold, plot_diagnostic,
-            review_notes, error_message
-        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+            review_notes, error_message,
+            ml_planet_score, ml_model_version, ml_decision_source
+        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
     """, (
         result.tic_id, result.classification.value,
         _py(result.period), _py(result.depth), _py(result.snr), _py(result.duration),
@@ -142,6 +162,7 @@ def insert_analysis(result: AnalysisResult) -> int:
         result.plot_lightcurve, result.plot_periodogram,
         result.plot_phase_fold, result.plot_diagnostic,
         result.review_notes, result.error_message,
+        _py(result.ml_planet_score), result.ml_model_version, result.ml_decision_source,
     ))
     row_id = cur.lastrowid
     conn.commit()
@@ -183,17 +204,34 @@ def get_latest_analysis(tic_id: int) -> Optional[dict]:
     return dict(row) if row else None
 
 
-def list_analyses(classification: Optional[str] = None, limit: int = 50) -> list[dict]:
+def list_analyses(
+    classification: Optional[str] = None,
+    limit: int = 50,
+    min_ml_score: Optional[float] = None,
+    model_version: Optional[str] = None,
+) -> list[dict]:
     conn = get_conn()
+    where = []
+    vals: list = []
+
     if classification:
-        rows = conn.execute(
-            "SELECT * FROM analyses WHERE classification=? ORDER BY id DESC LIMIT ?",
-            (classification, limit),
-        ).fetchall()
-    else:
-        rows = conn.execute(
-            "SELECT * FROM analyses ORDER BY id DESC LIMIT ?", (limit,)
-        ).fetchall()
+        where.append("classification=?")
+        vals.append(classification)
+    if min_ml_score is not None:
+        where.append("ml_planet_score IS NOT NULL")
+        where.append("ml_planet_score>=?")
+        vals.append(float(min_ml_score))
+    if model_version:
+        where.append("ml_model_version=?")
+        vals.append(model_version)
+
+    sql = "SELECT * FROM analyses"
+    if where:
+        sql += " WHERE " + " AND ".join(where)
+    sql += " ORDER BY id DESC LIMIT ?"
+    vals.append(limit)
+
+    rows = conn.execute(sql, tuple(vals)).fetchall()
     conn.close()
     return [dict(r) for r in rows]
 
@@ -205,6 +243,47 @@ def count_by_classification() -> dict[str, int]:
     ).fetchall()
     conn.close()
     return {r["classification"]: r["cnt"] for r in rows}
+
+
+def ml_monitor_snapshot(hours: int = 24) -> dict:
+    conn = get_conn()
+    row = conn.execute(
+        """
+        SELECT
+            COUNT(*) AS total,
+            SUM(CASE WHEN ml_planet_score IS NOT NULL THEN 1 ELSE 0 END) AS ml_scored,
+            SUM(CASE WHEN classification='PLANET_CANDIDATE' THEN 1 ELSE 0 END) AS planet_candidate,
+            SUM(CASE WHEN classification='MANUAL_REVIEW' THEN 1 ELSE 0 END) AS manual_review,
+            AVG(ml_planet_score) AS avg_score,
+            SUM(CASE WHEN ml_planet_score >= 0.80 THEN 1 ELSE 0 END) AS high_conf_planet
+        FROM analyses
+        WHERE datetime(created_at) >= datetime('now', ?)
+        """,
+        (f"-{int(hours)} hours",),
+    ).fetchone()
+
+    versions = conn.execute(
+        """
+        SELECT COALESCE(ml_model_version, 'N/A') AS model_version, COUNT(*) AS cnt
+        FROM analyses
+        WHERE datetime(created_at) >= datetime('now', ?)
+        GROUP BY COALESCE(ml_model_version, 'N/A')
+        ORDER BY cnt DESC
+        """,
+        (f"-{int(hours)} hours",),
+    ).fetchall()
+    conn.close()
+
+    return {
+        "hours": hours,
+        "total": int(row["total"] or 0),
+        "ml_scored": int(row["ml_scored"] or 0),
+        "planet_candidate": int(row["planet_candidate"] or 0),
+        "manual_review": int(row["manual_review"] or 0),
+        "high_conf_planet": int(row["high_conf_planet"] or 0),
+        "avg_score": float(row["avg_score"]) if row["avg_score"] is not None else None,
+        "versions": [{"model_version": r["model_version"], "count": int(r["cnt"] or 0)} for r in versions],
+    }
 
 
 # ---------- Queue ----------
