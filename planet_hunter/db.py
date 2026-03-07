@@ -295,36 +295,66 @@ def queue_stats() -> dict:
     return dict(row)
 
 
-def count_active_by_source(source: QueueSource) -> int:
-    """Count queue items for a source that are QUEUED or RUNNING."""
+def count_active_by_source(
+    source: QueueSource,
+    running_max_age_minutes: int | None = None,
+) -> int:
+    """Count active queue items for a source.
+
+    By default counts QUEUED + RUNNING. If running_max_age_minutes is provided,
+    stale RUNNING rows older than that threshold are excluded.
+    """
     conn = get_conn()
-    row = conn.execute(
-        """
-        SELECT COUNT(*)
-        FROM queue
-        WHERE source=? AND status IN ('QUEUED', 'RUNNING')
-        """,
-        (source.value,),
-    ).fetchone()
+    if running_max_age_minutes is None:
+        row = conn.execute(
+            """
+            SELECT COUNT(*)
+            FROM queue
+            WHERE source=? AND status IN ('QUEUED', 'RUNNING')
+            """,
+            (source.value,),
+        ).fetchone()
+    else:
+        row = conn.execute(
+            """
+            SELECT COUNT(*)
+            FROM queue
+            WHERE source=?
+              AND (
+                status='QUEUED'
+                OR (
+                  status='RUNNING'
+                  AND datetime(created_at) >= datetime('now', ?)
+                )
+              )
+            """,
+            (source.value, f"-{int(running_max_age_minutes)} minutes"),
+        ).fetchone()
     conn.close()
     return int(row[0] or 0)
 
 
-def requeue_stuck_running(hours: int = 6) -> int:
+def requeue_stuck_running(
+    minutes: int = 360,
+    source: QueueSource | None = None,
+) -> int:
     """Reset stale RUNNING queue items back to QUEUED.
 
-    Uses created_at as a conservative proxy for running age.
+    Uses created_at as a proxy for running age.
     """
     conn = get_conn()
-    cur = conn.execute(
-        """
+    params: tuple = (f"-{int(minutes)} minutes",)
+    sql = """
         UPDATE queue
         SET status='QUEUED'
         WHERE status='RUNNING'
           AND datetime(created_at) < datetime('now', ?)
-        """,
-        (f"-{int(hours)} hours",),
-    )
+    """
+    if source is not None:
+        sql += " AND source=?"
+        params = (f"-{int(minutes)} minutes", source.value)
+
+    cur = conn.execute(sql, params)
     changed = cur.rowcount if cur.rowcount is not None else 0
     conn.commit()
     conn.close()
