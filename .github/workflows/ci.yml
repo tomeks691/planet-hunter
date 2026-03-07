@@ -33,3 +33,11 @@ jobs:
           from planet_hunter.main import app
           print(f"Loaded app: {app.title}")
           PY
+
+      - name: ML classifier logic check
+        run: |
+          python scripts/ci_check_ml_classifier.py
+
+      - name: build_training_db blacklist check
+        run: |
+          python scripts/ci_check_build_training_blacklist.py
