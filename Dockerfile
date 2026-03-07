@@ -10,6 +10,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY planet_hunter/ planet_hunter/
+COPY retry_errors.py build_training_db.py import_known_planets.py ./
 COPY planet-hunter.service .
 
 RUN mkdir -p plots

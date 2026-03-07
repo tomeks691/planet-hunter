@@ -1,11 +1,28 @@
-venv/
+# Python
 __pycache__/
 *.py[cod]
+
+# Virtual environments
+venv/
+.venv/
+
+# Environment files
 .env
+.env.*
+
+# OS / editor
 .DS_Store
+.idea/
+.vscode/
+.claude/
+
+# Databases
 *.db
-*.db-shm
-*.db-wal
+*.db-*
+*.sqlite
+*.sqlite3
+
+# Runtime artifacts
 data/
 logs/
 plots/
