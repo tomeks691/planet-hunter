@@ -1,0 +1,20 @@
+{
+  "model": "two_stage_engineered_v1",
+  "objective": "high_recall_planet",
+  "planet_threshold": 0.14,
+  "notes": {
+    "reason": "Improves KNOWN_PLANET recall with limited macro-F1 impact.",
+    "tradeoff": "More false positives accepted for better planet capture."
+  },
+  "measured": {
+    "validation": {
+      "planet_recall": 0.817,
+      "planet_precision": 0.588
+    },
+    "test": {
+      "planet_recall": 0.711,
+      "planet_precision": 0.557,
+      "macro_f1": 0.864
+    }
+  }
+}

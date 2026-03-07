@@ -3,9 +3,21 @@ from planet_hunter.models import Classification, AnalysisResult
 from planet_hunter.config import (
     SNR_MINIMUM, DEPTH_MAX_PLANET, DEPTH_MIN_SIGNAL,
     SECONDARY_ECLIPSE_RATIO, ODD_EVEN_SIGMA,
+    ML_CLASSIFIER_ENABLED, ML_CLASSIFIER_UNCERTAINTY_MARGIN,
+    ML_STAGE_A_PATH, ML_STAGE_B_PATH, ML_METRICS_PATH,
 )
+from planet_hunter.pipeline.ml_classifier import TwoStageMLClassifier
 
 log = logging.getLogger(__name__)
+
+_ml = None
+if ML_CLASSIFIER_ENABLED:
+    _ml = TwoStageMLClassifier(
+        stage_a_path=ML_STAGE_A_PATH,
+        stage_b_path=ML_STAGE_B_PATH,
+        metrics_path=ML_METRICS_PATH,
+        uncertainty_margin=ML_CLASSIFIER_UNCERTAINTY_MARGIN,
+    )
 
 
 def classify(result: AnalysisResult) -> Classification:
@@ -38,7 +50,14 @@ def classify(result: AnalysisResult) -> Classification:
         log.info("SNR %.1f < %.1f -> NOISE", result.snr or 0, SNR_MINIMUM)
         return Classification.NOISE
 
-    # 2. Sinusoidal variation fits better -> VARIABLE_STAR
+    # 2. ML classifier (if enabled) can override remaining heuristic tree
+    if _ml is not None:
+        ml_cls = _ml.predict(result)
+        if ml_cls is not None:
+            log.info("ML classifier -> %s", ml_cls.value)
+            return ml_cls
+
+    # 3. Sinusoidal variation fits better -> VARIABLE_STAR
     if result.sinusoid_better:
         log.info("Sinusoid fits better -> VARIABLE_STAR")
         return Classification.VARIABLE_STAR
