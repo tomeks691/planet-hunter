@@ -10,12 +10,14 @@ Uruchomienie:
 Wynik: /app/data/ml_training.db
 """
 
+import json
 import logging
 import sqlite3
 from pathlib import Path
 
 DB_PATH = Path("/app/data/planet_hunter.db")
 ML_DB_PATH = Path("/app/data/ml_training.db")
+BLACKLIST_PATH = Path("/app/data/ml/label_blacklist_v1.json")
 
 VALID_LABELS = {"KNOWN_PLANET", "FALSE_POSITIVE", "ECLIPSING_BINARY", "NOISE"}
 
@@ -65,6 +67,25 @@ def build():
     src.close()
 
     log.info("Pobrano %d rekordów z planet_hunter.db", len(rows))
+
+    # Optional blacklist cleanup for suspicious KNOWN_PLANET labels
+    blacklisted_tics = set()
+    if BLACKLIST_PATH.exists():
+        try:
+            payload = json.loads(BLACKLIST_PATH.read_text(encoding="utf-8"))
+            blacklisted_tics = {int(t) for t in payload.get("tic_ids", [])}
+            if blacklisted_tics:
+                before = len(rows)
+                rows = [
+                    r for r in rows
+                    if not (r["label"] == "KNOWN_PLANET" and int(r["tic_id"]) in blacklisted_tics)
+                ]
+                log.warning(
+                    "Blacklist applied: removed %d KNOWN_PLANET row(s) by TIC id",
+                    before - len(rows),
+                )
+        except Exception as e:
+            log.error("Failed to apply blacklist %s: %s", BLACKLIST_PATH, e)
 
     # Statystyki per klasa
     from collections import Counter

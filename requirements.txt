@@ -8,3 +8,5 @@ astroquery>=0.4.7
 scipy>=1.11
 numpy>=1.24
 matplotlib>=3.8
+scikit-learn>=1.4
+joblib>=1.3
