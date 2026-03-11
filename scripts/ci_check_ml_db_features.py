@@ -71,7 +71,9 @@ def main():
 
         # 1) migration test: existing legacy schema should gain ML columns
         create_legacy_analyses_schema(db_file)
+        # Force db module to use this temp sqlite file, not default data/planet_hunter.db.
         db.DB_PATH = db_file
+        db.DATABASE_URL = f"sqlite:///{db_file}"
         db.init_db()
 
         conn = sqlite3.connect(db_file)
