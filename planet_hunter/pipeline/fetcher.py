@@ -47,6 +47,7 @@ def fetch_lightcurves(tic_id: int) -> list:
     by_sector: dict[int, list] = {}
     for i in range(len(search)):
         try:
+            log.info("TIC %d: downloading product %d/%d", tic_id, i + 1, len(search))
             lc = search[i].download()
             if lc is None or not hasattr(lc, "flux") or lc.flux is None:
                 continue

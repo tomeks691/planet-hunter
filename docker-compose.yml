@@ -1,12 +1,88 @@
 services:
-  planet-hunter:
-    build: .
-    container_name: planet-hunter
+  postgres:
+    image: postgres:16-alpine
+    container_name: planet-hunter-postgres
     restart: unless-stopped
+    environment:
+      POSTGRES_DB: planet_hunter
+      POSTGRES_USER: planet
+      POSTGRES_PASSWORD: ***REMOVED***
+    ports:
+      - "127.0.0.1:5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U planet -d planet_hunter"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+
+  planet-hunter-web:
+    build: .
+    container_name: planet-hunter-web
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://planet:***REMOVED***@postgres:5432/planet_hunter
+      ML_DB_URL: postgresql://planet:***REMOVED***@postgres:5432/planet_hunter
+      RUN_PIPELINE: "0"
+      RUN_SCANNER: "0"
+    command: ["uvicorn", "planet_hunter.main:app", "--host", "0.0.0.0", "--port", "8420", "--workers", "2"]
     ports:
       - "8420:8420"
     volumes:
       - ph-data:/app/data
 
+  planet-hunter-worker-1:
+    build: .
+    container_name: planet-hunter-worker-1
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://planet:***REMOVED***@postgres:5432/planet_hunter
+      ML_DB_URL: postgresql://planet:***REMOVED***@postgres:5432/planet_hunter
+      RUN_PIPELINE: "1"
+      RUN_SCANNER: "0"
+    command: ["uvicorn", "planet_hunter.main:app", "--host", "0.0.0.0", "--port", "8420", "--workers", "1"]
+    volumes:
+      - ph-data:/app/data
+
+  planet-hunter-worker-2:
+    build: .
+    container_name: planet-hunter-worker-2
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://planet:***REMOVED***@postgres:5432/planet_hunter
+      ML_DB_URL: postgresql://planet:***REMOVED***@postgres:5432/planet_hunter
+      RUN_PIPELINE: "1"
+      RUN_SCANNER: "0"
+    command: ["uvicorn", "planet_hunter.main:app", "--host", "0.0.0.0", "--port", "8420", "--workers", "1"]
+    volumes:
+      - ph-data:/app/data
+
+  planet-hunter-scanner:
+    build: .
+    container_name: planet-hunter-scanner
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://planet:***REMOVED***@postgres:5432/planet_hunter
+      ML_DB_URL: postgresql://planet:***REMOVED***@postgres:5432/planet_hunter
+      RUN_PIPELINE: "0"
+      RUN_SCANNER: "1"
+    command: ["uvicorn", "planet_hunter.main:app", "--host", "0.0.0.0", "--port", "8420", "--workers", "1"]
+    volumes:
+      - ph-data:/app/data
+
 volumes:
   ph-data:
+  pg-data:

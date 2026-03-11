@@ -1,9 +1,13 @@
+import os
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
 DATA_DIR.mkdir(exist_ok=True)
 DB_PATH = DATA_DIR / "planet_hunter.db"
+ML_DB_PATH = DATA_DIR / "ml_training.db"
+DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{DB_PATH}")
+ML_DB_URL = os.getenv("ML_DB_URL", f"sqlite:///{ML_DB_PATH}")
 PLOT_DIR = DATA_DIR / "plots"
 PLOT_DIR.mkdir(exist_ok=True)
 
@@ -36,6 +40,9 @@ STUCK_RUNNING_ML_MINUTES = 45
 # Conservative recovery for non-ML queue items.
 STUCK_RUNNING_OTHER_MINUTES = 360
 STUCK_SWEEP_INTERVAL_SECONDS = 300
+# Hard timeout for a single TIC processing attempt (prevents one stuck target
+# from blocking the only worker forever).
+PIPELINE_ITEM_TIMEOUT_SECONDS = 900
 
 # ML inference (optional runtime classifier)
 ML_CLASSIFIER_ENABLED = True

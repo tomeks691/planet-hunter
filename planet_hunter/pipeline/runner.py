@@ -2,6 +2,7 @@ import logging
 import shutil
 import threading
 import time
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
 from pathlib import Path
 from planet_hunter import db
 from planet_hunter.models import (
@@ -16,6 +17,7 @@ from planet_hunter.pipeline.classifier import classify
 from planet_hunter.pipeline.properties import compute_properties
 from planet_hunter.pipeline.plots import generate_all_plots
 from planet_hunter.config import (
+    PIPELINE_ITEM_TIMEOUT_SECONDS,
     SNR_MINIMUM,
     STUCK_RUNNING_ML_MINUTES,
     STUCK_RUNNING_OTHER_MINUTES,
@@ -23,6 +25,24 @@ from planet_hunter.config import (
 )
 
 log = logging.getLogger(__name__)
+
+
+class PipelineItemTimeoutError(TimeoutError):
+    pass
+
+
+def run_pipeline_with_timeout(tic_id: int, timeout_seconds: int) -> AnalysisResult:
+    if timeout_seconds <= 0:
+        return run_pipeline(tic_id)
+
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        future = executor.submit(run_pipeline, tic_id)
+        try:
+            return future.result(timeout=timeout_seconds)
+        except FuturesTimeoutError as e:
+            raise PipelineItemTimeoutError(
+                f"Pipeline item timed out after {timeout_seconds}s (tic_id={tic_id})"
+            ) from e
 
 
 def _pick_best_signal(lc, signals):
@@ -226,7 +246,10 @@ class PipelineRunner:
             log.info("Processing TIC %d (queue #%d)", tic_id, queue_id)
 
             try:
-                result = run_pipeline(tic_id)
+                result = run_pipeline_with_timeout(
+                    tic_id,
+                    timeout_seconds=PIPELINE_ITEM_TIMEOUT_SECONDS,
+                )
 
                 # Mark as KNOWN_PLANET only when we actually detected a periodic signal.
                 if db.is_known_planet(tic_id) and result.period is not None:

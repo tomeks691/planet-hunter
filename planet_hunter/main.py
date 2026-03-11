@@ -1,4 +1,5 @@
 import logging
+import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
@@ -18,15 +19,32 @@ pipeline_runner = PipelineRunner()
 auto_scanner = AutoScanner()
 
 
+def _is_enabled(name: str, default: bool) -> bool:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    return raw.strip().lower() in {"1", "true", "yes", "on"}
+
+
+RUN_PIPELINE = _is_enabled("RUN_PIPELINE", True)
+RUN_SCANNER = _is_enabled("RUN_SCANNER", True)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     db.init_db()
-    pipeline_runner.start()
-    auto_scanner.start()
-    logging.getLogger(__name__).info("Planet Hunter started")
+    if RUN_PIPELINE:
+        pipeline_runner.start()
+    if RUN_SCANNER:
+        auto_scanner.start()
+    logging.getLogger(__name__).info(
+        "Planet Hunter started (pipeline=%s, scanner=%s)", RUN_PIPELINE, RUN_SCANNER
+    )
     yield
-    pipeline_runner.stop()
-    auto_scanner.stop()
+    if RUN_PIPELINE:
+        pipeline_runner.stop()
+    if RUN_SCANNER:
+        auto_scanner.stop()
     logging.getLogger(__name__).info("Planet Hunter shutting down")
 
 
