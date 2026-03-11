@@ -9,6 +9,7 @@ venv/
 # Environment files
 .env
 .env.*
+!.env.example
 
 # OS / editor
 .DS_Store

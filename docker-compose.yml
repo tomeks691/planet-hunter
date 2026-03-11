@@ -4,9 +4,9 @@ services:
     container_name: planet-hunter-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: planet_hunter
-      POSTGRES_USER: planet
-      POSTGRES_PASSWORD: ***REMOVED***
+      POSTGRES_DB: ${POSTGRES_DB:-planet_hunter}
+      POSTGRES_USER: ${POSTGRES_USER:-planet}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "127.0.0.1:5432:5432"
     healthcheck:
@@ -25,8 +25,8 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgresql://planet:***REMOVED***@postgres:5432/planet_hunter
-      ML_DB_URL: postgresql://planet:***REMOVED***@postgres:5432/planet_hunter
+      DATABASE_URL: ${DATABASE_URL}
+      ML_DB_URL: ${ML_DB_URL}
       RUN_PIPELINE: "0"
       RUN_SCANNER: "0"
     command: ["uvicorn", "planet_hunter.main:app", "--host", "0.0.0.0", "--port", "8420", "--workers", "2"]
@@ -43,8 +43,8 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgresql://planet:***REMOVED***@postgres:5432/planet_hunter
-      ML_DB_URL: postgresql://planet:***REMOVED***@postgres:5432/planet_hunter
+      DATABASE_URL: ${DATABASE_URL}
+      ML_DB_URL: ${ML_DB_URL}
       RUN_PIPELINE: "1"
       RUN_SCANNER: "0"
     command: ["uvicorn", "planet_hunter.main:app", "--host", "0.0.0.0", "--port", "8420", "--workers", "1"]
@@ -59,8 +59,8 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgresql://planet:***REMOVED***@postgres:5432/planet_hunter
-      ML_DB_URL: postgresql://planet:***REMOVED***@postgres:5432/planet_hunter
+      DATABASE_URL: ${DATABASE_URL}
+      ML_DB_URL: ${ML_DB_URL}
       RUN_PIPELINE: "1"
       RUN_SCANNER: "0"
     command: ["uvicorn", "planet_hunter.main:app", "--host", "0.0.0.0", "--port", "8420", "--workers", "1"]
@@ -75,8 +75,8 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgresql://planet:***REMOVED***@postgres:5432/planet_hunter
-      ML_DB_URL: postgresql://planet:***REMOVED***@postgres:5432/planet_hunter
+      DATABASE_URL: ${DATABASE_URL}
+      ML_DB_URL: ${ML_DB_URL}
       RUN_PIPELINE: "0"
       RUN_SCANNER: "1"
     command: ["uvicorn", "planet_hunter.main:app", "--host", "0.0.0.0", "--port", "8420", "--workers", "1"]
